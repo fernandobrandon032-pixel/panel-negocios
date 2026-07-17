@@ -23,7 +23,15 @@ export function Login() {
     const { error } = await signIn(email, password)
     setLoading(false)
     if (error) {
-      setError('No pudimos entrar. Revisa tu correo y contraseña.')
+      if (error.toLowerCase().includes('email not confirmed')) {
+        setError(
+          'Tu cuenta todavía no está confirmada. En Supabase, ve a Authentication → Users, abre tu usuario y confírmalo manualmente (o créalo de nuevo marcando "Auto Confirm User").'
+        )
+      } else if (error.toLowerCase().includes('invalid login credentials')) {
+        setError('Correo o contraseña incorrectos.')
+      } else {
+        setError(error)
+      }
       return
     }
     navigate('/')
