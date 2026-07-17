@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"\\(Get-Item 'C:\\\\Users\\\\Dell\\\\Downloads\\\\Nueva carpeta\\\\dashboard-negocios.html'\\).Length\")"
+    ]
+  }
+}
