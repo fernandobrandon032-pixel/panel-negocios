@@ -2,11 +2,39 @@ import { useMemo, useState } from 'react'
 import { EmptyState } from '../../../components/shared/EmptyState'
 import { ConfirmDialog } from '../../../components/shared/ConfirmDialog'
 import { useToast } from '../../../contexts/ToastContext'
-import { formatCurrency } from '../../../lib/formatters'
-import { getProductoFotoUrl } from '../../../lib/photoUpload'
 import { useDeleteProducto, useProductos, type ProductoConDetalle } from '../hooks/useProductos'
 import { ProductoForm } from './ProductoForm'
 import { FusionarModal } from './FusionarModal'
+import { ProductoCard } from './ProductoCard'
+
+type OrdenOpcion = 'nombre-asc' | 'nombre-desc' | 'reciente' | 'antiguo' | 'precio-asc' | 'precio-desc'
+
+const ORDEN_LABELS: Record<OrdenOpcion, string> = {
+  'nombre-asc': 'Nombre: A-Z',
+  'nombre-desc': 'Nombre: Z-A',
+  reciente: 'Más recientes',
+  antiguo: 'Más antiguas',
+  'precio-asc': 'Precio: menor a mayor',
+  'precio-desc': 'Precio: mayor a menor',
+}
+
+function ordenar(productos: ProductoConDetalle[], orden: OrdenOpcion): ProductoConDetalle[] {
+  const copia = [...productos]
+  switch (orden) {
+    case 'nombre-asc':
+      return copia.sort((a, b) => a.nombre.localeCompare(b.nombre))
+    case 'nombre-desc':
+      return copia.sort((a, b) => b.nombre.localeCompare(a.nombre))
+    case 'reciente':
+      return copia.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    case 'antiguo':
+      return copia.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    case 'precio-asc':
+      return copia.sort((a, b) => a.precio - b.precio)
+    case 'precio-desc':
+      return copia.sort((a, b) => b.precio - a.precio)
+  }
+}
 
 export function StockTab() {
   const { data: productos, isLoading } = useProductos()
@@ -14,6 +42,7 @@ export function StockTab() {
   const showToast = useToast()
 
   const [search, setSearch] = useState('')
+  const [orden, setOrden] = useState<OrdenOpcion>('nombre-asc')
   const [editing, setEditing] = useState<ProductoConDetalle | 'new' | null>(null)
   const [fusionando, setFusionando] = useState<ProductoConDetalle | null>(null)
   const [borrando, setBorrando] = useState<ProductoConDetalle | null>(null)
@@ -21,9 +50,11 @@ export function StockTab() {
   const filtrados = useMemo(() => {
     if (!productos) return []
     const q = search.trim().toLowerCase()
-    if (!q) return productos
-    return productos.filter((p) => p.nombre.toLowerCase().includes(q) || p.corte.toLowerCase().includes(q))
-  }, [productos, search])
+    const base = q
+      ? productos.filter((p) => p.nombre.toLowerCase().includes(q) || p.corte.toLowerCase().includes(q))
+      : productos
+    return ordenar(base, orden)
+  }, [productos, search, orden])
 
   if (isLoading) return <EmptyState message="Cargando stock…" />
 
@@ -31,13 +62,20 @@ export function StockTab() {
     <>
       <div className="section-row">
         <h2>Stock</h2>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="toolbar-row">
           <input
             className="search-input"
             placeholder="Buscar por nombre o corte…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          <select className="sort-select" value={orden} onChange={(e) => setOrden(e.target.value as OrdenOpcion)}>
+            {(Object.keys(ORDEN_LABELS) as OrdenOpcion[]).map((key) => (
+              <option key={key} value={key}>
+                {ORDEN_LABELS[key]}
+              </option>
+            ))}
+          </select>
           <button className="btn primary" onClick={() => setEditing('new')}>
             + Nuevo producto
           </button>
@@ -47,68 +85,17 @@ export function StockTab() {
       {!filtrados.length ? (
         <EmptyState message={search ? 'No hay productos que coincidan' : 'Todavía no hay productos en el catálogo'} />
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th></th>
-              <th>Nombre</th>
-              <th>Corte</th>
-              <th>Tallas</th>
-              <th>Precio</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtrados.map((p) => {
-              const frente = p.bz_producto_fotos.find((f) => f.tipo === 'frente')
-              const totalStock = p.bz_producto_tallas.reduce((sum, t) => sum + t.cantidad, 0)
-              return (
-                <tr key={p.id}>
-                  <td>
-                    {frente ? (
-                      <img
-                        src={getProductoFotoUrl(frente.storage_path)}
-                        alt={p.nombre}
-                        style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6 }}
-                      />
-                    ) : (
-                      <div style={{ width: 40, height: 40, borderRadius: 6, background: 'rgba(255,255,255,.06)' }} />
-                    )}
-                  </td>
-                  <td>
-                    {p.nombre}
-                    {p.categoria !== 'General' && (
-                      <>
-                        {' '}
-                        <span className="pill example">{p.categoria}</span>
-                      </>
-                    )}
-                  </td>
-                  <td>{p.corte}</td>
-                  <td>
-                    <span className={`pill ${totalStock === 0 ? 'out' : totalStock < 5 ? 'low' : 'ok'}`}>
-                      {totalStock} pzas
-                    </span>
-                  </td>
-                  <td>{formatCurrency(p.precio)}</td>
-                  <td>
-                    <div className="row-actions">
-                      <button className="icon-btn" onClick={() => setEditing(p)}>
-                        Editar
-                      </button>
-                      <button className="icon-btn" onClick={() => setFusionando(p)}>
-                        Fusionar
-                      </button>
-                      <button className="icon-btn" onClick={() => setBorrando(p)}>
-                        Borrar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        <div className="product-grid">
+          {filtrados.map((p) => (
+            <ProductoCard
+              key={p.id}
+              producto={p}
+              onEdit={() => setEditing(p)}
+              onFusionar={() => setFusionando(p)}
+              onBorrar={() => setBorrando(p)}
+            />
+          ))}
+        </div>
       )}
 
       {editing === 'new' && <ProductoForm onClose={() => setEditing(null)} />}
