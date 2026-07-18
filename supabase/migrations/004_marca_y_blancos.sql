@@ -20,6 +20,9 @@ create policy "authenticated_all" on stock_blancos for all to authenticated usin
 
 grant select, insert, update, delete on stock_blancos to authenticated;
 
+-- Necesario para que los cambios en esta tabla se transmitan en tiempo real entre pestañas.
+alter publication supabase_realtime add table stock_blancos;
+
 -- Semilla: blanco y negro en Corte Recto y Corte Oversize, las 5 tallas en 0 (edítalo tú con tu
 -- stock real desde la pestaña "Blancos").
 do $$
