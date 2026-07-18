@@ -6,6 +6,7 @@ import { useDeleteProducto, useProductos, type ProductoConDetalle } from '../hoo
 import { ProductoForm } from './ProductoForm'
 import { FusionarModal } from './FusionarModal'
 import { ProductoCard } from './ProductoCard'
+import { BulkUploadModal } from './BulkUploadModal'
 
 type OrdenOpcion = 'nombre-asc' | 'nombre-desc' | 'reciente' | 'antiguo' | 'precio-asc' | 'precio-desc'
 
@@ -46,6 +47,7 @@ export function StockTab() {
   const [editing, setEditing] = useState<ProductoConDetalle | 'new' | null>(null)
   const [fusionando, setFusionando] = useState<ProductoConDetalle | null>(null)
   const [borrando, setBorrando] = useState<ProductoConDetalle | null>(null)
+  const [cargaMasiva, setCargaMasiva] = useState(false)
 
   const filtrados = useMemo(() => {
     if (!productos) return []
@@ -76,6 +78,9 @@ export function StockTab() {
               </option>
             ))}
           </select>
+          <button className="btn ghost" onClick={() => setCargaMasiva(true)}>
+            Carga masiva de fotos
+          </button>
           <button className="btn primary" onClick={() => setEditing('new')}>
             + Nuevo producto
           </button>
@@ -103,6 +108,7 @@ export function StockTab() {
       {fusionando && productos && (
         <FusionarModal productos={productos} productoInicial={fusionando} onClose={() => setFusionando(null)} />
       )}
+      {cargaMasiva && productos && <BulkUploadModal productos={productos} onClose={() => setCargaMasiva(false)} />}
       {borrando && (
         <ConfirmDialog
           title="Borrar producto"
