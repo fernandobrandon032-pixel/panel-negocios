@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { EmptyState } from '../../../components/shared/EmptyState'
 import { ConfirmDialog } from '../../../components/shared/ConfirmDialog'
 import { useToast } from '../../../contexts/ToastContext'
+import type { CorteEnum } from '../../../lib/database.types'
 import { useDeleteProducto, useProductos, type ProductoConDetalle } from '../hooks/useProductos'
 import { ProductoForm } from './ProductoForm'
 import { FusionarModal } from './FusionarModal'
@@ -18,6 +19,8 @@ const ORDEN_LABELS: Record<OrdenOpcion, string> = {
   'precio-asc': 'Precio: menor a mayor',
   'precio-desc': 'Precio: mayor a menor',
 }
+
+const ORDEN_CORTES: CorteEnum[] = ['Corte Recto', 'Corte Oversize', 'Corte Polo', 'Corte Niño']
 
 function ordenar(productos: ProductoConDetalle[], orden: OrdenOpcion): ProductoConDetalle[] {
   const copia = [...productos]
@@ -37,6 +40,16 @@ function ordenar(productos: ProductoConDetalle[], orden: OrdenOpcion): ProductoC
   }
 }
 
+function agruparPorMarca(productos: ProductoConDetalle[]): [string, ProductoConDetalle[]][] {
+  const map = new Map<string, ProductoConDetalle[]>()
+  for (const p of productos) {
+    const marca = p.marca?.trim() || 'Sin marca'
+    if (!map.has(marca)) map.set(marca, [])
+    map.get(marca)!.push(p)
+  }
+  return Array.from(map.entries()).sort(([a], [b]) => (a === 'Sin marca' ? 1 : b === 'Sin marca' ? -1 : a.localeCompare(b)))
+}
+
 export function StockTab() {
   const { data: productos, isLoading } = useProductos()
   const deleteProducto = useDeleteProducto()
@@ -53,10 +66,24 @@ export function StockTab() {
     if (!productos) return []
     const q = search.trim().toLowerCase()
     const base = q
-      ? productos.filter((p) => p.nombre.toLowerCase().includes(q) || p.corte.toLowerCase().includes(q))
+      ? productos.filter(
+          (p) =>
+            p.nombre.toLowerCase().includes(q) ||
+            p.corte.toLowerCase().includes(q) ||
+            p.marca?.toLowerCase().includes(q)
+        )
       : productos
     return ordenar(base, orden)
   }, [productos, search, orden])
+
+  const porCorte = useMemo(() => {
+    const map = new Map<CorteEnum, ProductoConDetalle[]>()
+    for (const p of filtrados) {
+      if (!map.has(p.corte)) map.set(p.corte, [])
+      map.get(p.corte)!.push(p)
+    }
+    return map
+  }, [filtrados])
 
   if (isLoading) return <EmptyState message="Cargando stock…" />
 
@@ -67,7 +94,7 @@ export function StockTab() {
         <div className="toolbar-row">
           <input
             className="search-input"
-            placeholder="Buscar por nombre o corte…"
+            placeholder="Buscar por nombre, marca o corte…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -90,17 +117,30 @@ export function StockTab() {
       {!filtrados.length ? (
         <EmptyState message={search ? 'No hay productos que coincidan' : 'Todavía no hay productos en el catálogo'} />
       ) : (
-        <div className="product-grid">
-          {filtrados.map((p) => (
-            <ProductoCard
-              key={p.id}
-              producto={p}
-              onEdit={() => setEditing(p)}
-              onFusionar={() => setFusionando(p)}
-              onBorrar={() => setBorrando(p)}
-            />
-          ))}
-        </div>
+        ORDEN_CORTES.filter((corte) => porCorte.has(corte)).map((corte) => (
+          <div key={corte} style={{ marginBottom: 30 }}>
+            <div className="corte-heading">
+              {corte}
+              <span className="corte-heading-count">{porCorte.get(corte)!.length} modelos</span>
+            </div>
+            {agruparPorMarca(porCorte.get(corte)!).map(([marca, items]) => (
+              <div key={marca} style={{ marginBottom: 18 }}>
+                <div className="marca-label">{marca}</div>
+                <div className="product-grid">
+                  {items.map((p) => (
+                    <ProductoCard
+                      key={p.id}
+                      producto={p}
+                      onEdit={() => setEditing(p)}
+                      onFusionar={() => setFusionando(p)}
+                      onBorrar={() => setBorrando(p)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ))
       )}
 
       {editing === 'new' && <ProductoForm onClose={() => setEditing(null)} />}

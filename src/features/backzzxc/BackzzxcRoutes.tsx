@@ -7,10 +7,12 @@ import { ProspectosTab } from './ProspectosTab'
 import { VentasTab } from './VentasTab/VentasTab'
 import { ConsignacionTab } from './ConsignacionTab/ConsignacionTab'
 import { CostosTab } from './CostosTab'
+import { BlancosTab } from '../blancos/BlancosTab'
 
 const tabs = [
   { to: '/backzzxc', label: 'Resumen', end: true },
   { to: '/backzzxc/stock', label: 'Stock' },
+  { to: '/backzzxc/blancos', label: 'Blancos' },
   { to: '/backzzxc/clientes', label: 'Clientes' },
   { to: '/backzzxc/prospectos', label: 'Prospectos' },
   { to: '/backzzxc/ventas', label: 'Ventas' },
@@ -24,6 +26,7 @@ export function BackzzxcRoutes() {
       <Route element={<BusinessShell theme="bz" brandName="Backzzxc" tabs={tabs} />}>
         <Route index element={<ResumenTab />} />
         <Route path="stock" element={<StockTab />} />
+        <Route path="blancos" element={<BlancosTab />} />
         <Route path="clientes" element={<ClientesTab />} />
         <Route path="prospectos" element={<ProspectosTab />} />
         <Route path="ventas" element={<VentasTab />} />

@@ -14,12 +14,13 @@ export function ProductoCard({
   onFusionar: () => void
   onBorrar: () => void
 }) {
-  const [fotoIndex, setFotoIndex] = useState(0)
   const [tallasAbiertas, setTallasAbiertas] = useState(false)
 
   const frente = producto.bz_producto_fotos.find((f) => f.tipo === 'frente')
   const espalda = producto.bz_producto_fotos.find((f) => f.tipo === 'espalda')
-  const fotos = [frente, espalda].filter(Boolean) as typeof producto.bz_producto_fotos
+  // La espalda va primero: el diseño suele venir más grande ahí y se aprecia mejor de entrada.
+  const fotos = [espalda, frente].filter(Boolean) as typeof producto.bz_producto_fotos
+  const [fotoIndex, setFotoIndex] = useState(0)
   const fotoActual = fotos[fotoIndex] ?? fotos[0]
 
   const totalStock = producto.bz_producto_tallas.reduce((sum, t) => sum + t.cantidad, 0)
@@ -45,7 +46,7 @@ export function ProductoCard({
         {fotos.length > 1 && (
           <>
             <div className="product-card-flip-hint">
-              <span>Click para ver {fotoIndex === 0 ? 'espalda' : 'frente'}</span>
+              <span>Click para ver {fotos[(fotoIndex + 1) % fotos.length]?.tipo}</span>
             </div>
             <div className="product-card-dots">
               {fotos.map((_, i) => (
@@ -60,6 +61,7 @@ export function ProductoCard({
         <div>
           <div className="product-card-title">{producto.nombre}</div>
           <div className="product-card-subtitle">
+            {producto.marca ? `${producto.marca} · ` : ''}
             {producto.corte}
             {producto.categoria !== 'General' ? ` · ${producto.categoria}` : ''}
           </div>

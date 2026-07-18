@@ -21,6 +21,7 @@ export function ProductoForm({ producto, onClose }: { producto?: ProductoConDeta
   const updateProducto = useUpdateProducto()
 
   const [nombre, setNombre] = useState(producto?.nombre ?? '')
+  const [marca, setMarca] = useState(producto?.marca ?? '')
   const [corte, setCorte] = useState<CorteEnum>(producto?.corte ?? 'Corte Recto')
   const [categoria, setCategoria] = useState(producto?.categoria ?? 'General')
   const [precio, setPrecio] = useState(producto?.precio ?? PRECIO_DEFAULT_POR_CORTE['Corte Recto'])
@@ -42,11 +43,11 @@ export function ProductoForm({ producto, onClose }: { producto?: ProductoConDeta
     setError(null)
     try {
       if (isEdit && savedProductoId) {
-        await updateProducto.mutateAsync({ id: savedProductoId, nombre, corte, categoria, precio, notas, tallas })
+        await updateProducto.mutateAsync({ id: savedProductoId, nombre, marca, corte, categoria, precio, notas, tallas })
         showToast('Producto actualizado')
         onClose()
       } else {
-        const nuevo = await createProducto.mutateAsync({ nombre, corte, categoria, precio, notas })
+        const nuevo = await createProducto.mutateAsync({ nombre, marca, corte, categoria, precio, notas })
         setSavedProductoId(nuevo.id)
         showToast('Producto creado — ahora puedes agregarle fotos')
       }
@@ -67,6 +68,10 @@ export function ProductoForm({ producto, onClose }: { producto?: ProductoConDeta
       <div className="field">
         <label>Nombre</label>
         <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej. Amiri 03" />
+      </div>
+      <div className="field">
+        <label>Marca</label>
+        <input value={marca} onChange={(e) => setMarca(e.target.value)} placeholder="Ej. Amiri, Boss, Hugo…" />
       </div>
       <div className="two-col">
         <div className="field">

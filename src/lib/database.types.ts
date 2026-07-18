@@ -22,6 +22,7 @@ export type BzProducto = {
   nombre: string
   corte: CorteEnum
   categoria: string
+  marca: string | null
   precio: number
   notas: string | null
   created_at: string
@@ -202,6 +203,17 @@ export type FzMetaAhorro = {
   monto_objetivo: number
 }
 
+// Stock de playeras en blanco, compartido entre Backzzxc y TurboPrints95 (ambos negocios
+// estampan sobre el mismo blanco, así que es un solo inventario, no uno por negocio).
+export type StockBlanco = {
+  id: string
+  user_id: string
+  corte: CorteEnum
+  color: string
+  talla: TallaEnum
+  cantidad: number
+}
+
 type Relationship = {
   foreignKeyName: string
   columns: string[]
@@ -222,7 +234,7 @@ type TableDef<Row, Auto extends keyof Row, Nullable extends keyof Row = never, R
 export type Database = {
   public: {
     Tables: {
-      bz_productos: TableDef<BzProducto, 'id' | 'user_id' | 'created_at', 'categoria' | 'notas'>
+      bz_productos: TableDef<BzProducto, 'id' | 'user_id' | 'created_at', 'categoria' | 'notas' | 'marca'>
       bz_producto_fotos: TableDef<
         BzProductoFoto,
         'id' | 'created_at',
@@ -264,6 +276,7 @@ export type Database = {
       >
       bz_costos_insumos: TableDef<BzCostoInsumo, 'id' | 'user_id', 'unidad' | 'notas'>
       bz_costos_blank: TableDef<BzCostoBlank, 'id' | 'user_id'>
+      stock_blancos: TableDef<StockBlanco, 'id' | 'user_id'>
       tp_clientes: TableDef<TpCliente, 'id' | 'user_id' | 'created_at', 'contacto' | 'notas'>
       tp_prospectos: TableDef<TpProspecto, 'id' | 'user_id', 'contacto' | 'interes'>
       tp_pedidos: TableDef<

@@ -192,6 +192,19 @@ tbody tr:hover { background: rgba(255,255,255,.02); }
 .dash.tp .sort-select { background: var(--tp-bg2); border-color: var(--tp-line); }
 .dash.fz .sort-select { background: var(--fz-bg2); border-color: var(--fz-line); }
 
+.corte-heading {
+  display: flex; align-items: baseline; gap: 10px; font-size: 18px; font-weight: 800;
+  letter-spacing: -.01em; padding-bottom: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--bz-line);
+}
+.dash.tp .corte-heading { border-color: var(--tp-line); }
+.dash.fz .corte-heading { border-color: var(--fz-line); }
+.corte-heading-count { font-size: 11.5px; font-weight: 600; opacity: .5; text-transform: none; letter-spacing: 0; }
+
+.marca-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; opacity: .55;
+  margin-bottom: 10px;
+}
+
 .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 20px; margin-top: 18px; }
 .product-card {
   border: 1px solid var(--bz-line); border-radius: 14px; overflow: hidden; cursor: pointer;

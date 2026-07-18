@@ -33,7 +33,7 @@ export function useProductos() {
 export function useCreateProducto() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (input: { nombre: string; corte: CorteEnum; categoria: string; precio: number; notas?: string }) => {
+    mutationFn: async (input: { nombre: string; marca?: string; corte: CorteEnum; categoria: string; precio: number; notas?: string }) => {
       const { data: producto, error } = await supabase.from('bz_productos').insert(input).select().single()
       if (error) throw error
 
@@ -54,6 +54,7 @@ export function useUpdateProducto() {
     mutationFn: async (input: {
       id: string
       nombre: string
+      marca?: string
       corte: CorteEnum
       categoria: string
       precio: number
