@@ -8,10 +8,12 @@ import type { ProductoConDetalle } from '../hooks/useProductos'
 // "Boss 04" o "Hugo 02", que nadie recuerda de memoria; con la foto es inmediato.
 export function ProductoPickerModal({
   productos,
+  permitirSinStock = false,
   onSelect,
   onClose,
 }: {
   productos: ProductoConDetalle[]
+  permitirSinStock?: boolean
   onSelect: (producto: ProductoConDetalle) => void
   onClose: () => void
 }) {
@@ -38,18 +40,19 @@ export function ProductoPickerModal({
           {filtrados.map((p) => {
             const foto = p.bz_producto_fotos.find((f) => f.tipo === 'espalda') ?? p.bz_producto_fotos[0]
             const totalStock = p.bz_producto_tallas.reduce((sum, t) => sum + t.cantidad, 0)
+            const deshabilitado = totalStock === 0 && !permitirSinStock
             return (
               <button
                 key={p.id}
                 onClick={() => onSelect(p)}
-                disabled={totalStock === 0}
+                disabled={deshabilitado}
                 style={{
                   border: '1px solid var(--bz-line)',
                   borderRadius: 10,
                   overflow: 'hidden',
                   background: 'none',
-                  cursor: totalStock === 0 ? 'not-allowed' : 'pointer',
-                  opacity: totalStock === 0 ? 0.4 : 1,
+                  cursor: deshabilitado ? 'not-allowed' : 'pointer',
+                  opacity: deshabilitado ? 0.4 : 1,
                   padding: 0,
                   textAlign: 'left',
                   color: 'inherit',

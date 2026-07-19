@@ -303,6 +303,7 @@ export type Database = {
           p_notas?: string | null
           p_origen?: string
           p_fecha?: string | null
+          p_descontar_stock?: boolean
         }
         Returns: string
       }

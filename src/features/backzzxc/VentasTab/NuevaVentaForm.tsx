@@ -98,6 +98,7 @@ export function NuevaVentaForm({ onClose }: { onClose: () => void }) {
 
   const [clienteId, setClienteId] = useState('')
   const [fecha, setFecha] = useState(todayISO())
+  const [ventaPasada, setVentaPasada] = useState(false)
   const [notas, setNotas] = useState('')
   const [lineas, setLineas] = useState<LineaForm[]>([{ ...LINEA_VACIA }])
   const [error, setError] = useState<string | null>(null)
@@ -126,7 +127,13 @@ export function NuevaVentaForm({ onClose }: { onClose: () => void }) {
       return
     }
     try {
-      await registrarVenta.mutateAsync({ clienteId: clienteId || null, items, notas, fecha })
+      await registrarVenta.mutateAsync({
+        clienteId: clienteId || null,
+        items,
+        notas,
+        fecha,
+        descontarStock: !ventaPasada,
+      })
       showToast('Venta registrada')
       onClose()
     } catch (e) {
@@ -155,10 +162,17 @@ export function NuevaVentaForm({ onClose }: { onClose: () => void }) {
       </div>
       <NuevoClienteInline onCreated={setClienteId} />
 
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, fontSize: 12.5 }}>
+        <input type="checkbox" checked={ventaPasada} onChange={(e) => setVentaPasada(e.target.checked)} />
+        Venta pasada — no descontar del stock actual (para piezas que ya no tienes)
+      </label>
+
       <div style={{ marginTop: 18 }}>
         {lineas.map((linea, index) => {
           const producto = productos?.find((p) => p.id === linea.productoId)
-          const tallasDisponibles = producto?.bz_producto_tallas.filter((t) => t.cantidad > 0) ?? []
+          const tallasDisponibles = ventaPasada
+            ? (producto?.bz_producto_tallas ?? [])
+            : (producto?.bz_producto_tallas.filter((t) => t.cantidad > 0) ?? [])
           return (
             <div key={index} className="two-col" style={{ marginBottom: 10, alignItems: 'end' }}>
               <div className="field">
@@ -238,6 +252,7 @@ export function NuevaVentaForm({ onClose }: { onClose: () => void }) {
       {pickerParaLinea !== null && productos && (
         <ProductoPickerModal
           productos={productos}
+          permitirSinStock={ventaPasada}
           onSelect={(p) => seleccionarProducto(pickerParaLinea, p)}
           onClose={() => setPickerParaLinea(null)}
         />

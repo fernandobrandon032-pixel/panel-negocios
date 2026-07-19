@@ -26,13 +26,20 @@ export function useVentas() {
 export function useRegistrarVenta() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (input: { clienteId: string | null; items: VentaItemInput[]; notas?: string; fecha?: string }) => {
+    mutationFn: async (input: {
+      clienteId: string | null
+      items: VentaItemInput[]
+      notas?: string
+      fecha?: string
+      descontarStock?: boolean
+    }) => {
       const { data, error } = await supabase.rpc('registrar_venta', {
         p_cliente_id: input.clienteId,
         p_items: input.items,
         p_notas: input.notas ?? null,
         p_origen: 'directa',
         p_fecha: input.fecha ? new Date(input.fecha).toISOString() : null,
+        p_descontar_stock: input.descontarStock ?? true,
       })
       if (error) throw error
       return data
