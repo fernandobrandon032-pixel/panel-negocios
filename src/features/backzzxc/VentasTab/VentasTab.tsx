@@ -1,21 +1,37 @@
 import { useState } from 'react'
 import { EmptyState } from '../../../components/shared/EmptyState'
 import { formatCurrency, formatDate } from '../../../lib/formatters'
+import type { TallaEnum } from '../../../lib/database.types'
 import { useVentas } from '../hooks/useVentas'
-import { NuevaVentaForm } from './NuevaVentaForm'
+import { NuevaVentaForm, type VentaExistente } from './NuevaVentaForm'
 
 interface VentaItemJoined {
+  producto_id: string
   cantidad: number
   precio_unitario: number
-  talla: string
+  talla: TallaEnum
   bz_productos: { nombre: string } | null
+}
+
+interface VentaJoined {
+  id: string
+  cliente_id: string | null
+  fecha: string
+  notas: string | null
+  origen: string
+  descontar_stock: boolean
+  bz_clientes: { nombre: string } | null
+  bz_venta_items: VentaItemJoined[]
 }
 
 export function VentasTab() {
   const { data: ventas, isLoading } = useVentas()
   const [creando, setCreando] = useState(false)
+  const [editando, setEditando] = useState<VentaExistente | null>(null)
 
   if (isLoading) return <EmptyState message="Cargando ventas…" />
+
+  const ventasJoined = (ventas ?? []) as unknown as VentaJoined[]
 
   return (
     <>
@@ -26,7 +42,7 @@ export function VentasTab() {
         </button>
       </div>
 
-      {!ventas?.length ? (
+      {!ventasJoined.length ? (
         <EmptyState message="Todavía no hay ventas registradas" />
       ) : (
         <table>
@@ -37,11 +53,12 @@ export function VentasTab() {
               <th>Productos</th>
               <th>Origen</th>
               <th>Total</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
-            {ventas.map((v) => {
-              const items = (v.bz_venta_items ?? []) as VentaItemJoined[]
+            {ventasJoined.map((v) => {
+              const items = v.bz_venta_items ?? []
               const total = items.reduce((sum, i) => sum + i.cantidad * i.precio_unitario, 0)
               return (
                 <tr key={v.id}>
@@ -56,6 +73,28 @@ export function VentasTab() {
                     <span className={`pill ${v.origen === 'consignacion' ? 'low' : 'ok'}`}>{v.origen}</span>
                   </td>
                   <td>{formatCurrency(total)}</td>
+                  <td>
+                    <button
+                      className="icon-btn"
+                      onClick={() =>
+                        setEditando({
+                          id: v.id,
+                          cliente_id: v.cliente_id,
+                          fecha: v.fecha,
+                          notas: v.notas,
+                          descontar_stock: v.descontar_stock,
+                          bz_venta_items: items.map((i) => ({
+                            producto_id: i.producto_id,
+                            talla: i.talla,
+                            cantidad: i.cantidad,
+                            precio_unitario: i.precio_unitario,
+                          })),
+                        })
+                      }
+                    >
+                      Editar
+                    </button>
+                  </td>
                 </tr>
               )
             })}
@@ -64,6 +103,7 @@ export function VentasTab() {
       )}
 
       {creando && <NuevaVentaForm onClose={() => setCreando(false)} />}
+      {editando && <NuevaVentaForm venta={editando} onClose={() => setEditando(null)} />}
     </>
   )
 }

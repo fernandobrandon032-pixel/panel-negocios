@@ -311,6 +311,17 @@ export type Database = {
         Args: { p_pieza_id: string; p_precio_venta: number }
         Returns: string
       }
+      editar_venta: {
+        Args: {
+          p_venta_id: string
+          p_cliente_id: string | null
+          p_items: { producto_id: string; talla: TallaEnum; cantidad: number; precio_unitario: number }[]
+          p_notas?: string | null
+          p_fecha?: string | null
+          p_descontar_stock?: boolean
+        }
+        Returns: void
+      }
     }
   }
 }

@@ -51,3 +51,32 @@ export function useRegistrarVenta() {
     },
   })
 }
+
+export function useEditarVenta() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: {
+      ventaId: string
+      clienteId: string | null
+      items: VentaItemInput[]
+      notas?: string
+      fecha?: string
+      descontarStock?: boolean
+    }) => {
+      const { error } = await supabase.rpc('editar_venta', {
+        p_venta_id: input.ventaId,
+        p_cliente_id: input.clienteId,
+        p_items: input.items,
+        p_notas: input.notas ?? null,
+        p_fecha: input.fecha ? new Date(input.fecha).toISOString() : null,
+        p_descontar_stock: input.descontarStock ?? true,
+      })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bz', 'ventas'] })
+      queryClient.invalidateQueries({ queryKey: ['bz', 'productos'] })
+      queryClient.invalidateQueries({ queryKey: ['bz', 'clientes'] })
+    },
+  })
+}

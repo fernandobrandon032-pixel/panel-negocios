@@ -6,7 +6,7 @@ import { todayISO } from '../../../lib/formatters'
 import type { TallaEnum } from '../../../lib/database.types'
 import { useClientes, useCreateCliente } from '../hooks/useClientes'
 import { useProductos, type ProductoConDetalle } from '../hooks/useProductos'
-import { useRegistrarVenta, type VentaItemInput } from '../hooks/useVentas'
+import { useEditarVenta, useRegistrarVenta, type VentaItemInput } from '../hooks/useVentas'
 import { ProductoPickerModal } from './ProductoPickerModal'
 
 interface LineaForm {
@@ -14,6 +14,15 @@ interface LineaForm {
   talla: TallaEnum | ''
   cantidad: number
   precioUnitario: number
+}
+
+export interface VentaExistente {
+  id: string
+  cliente_id: string | null
+  fecha: string
+  notas: string | null
+  descontar_stock: boolean
+  bz_venta_items: { producto_id: string; talla: TallaEnum; cantidad: number; precio_unitario: number }[]
 }
 
 const LINEA_VACIA: LineaForm = { productoId: '', talla: '', cantidad: 1, precioUnitario: 0 }
@@ -90,19 +99,34 @@ function ProductoButton({ producto, onClick }: { producto?: ProductoConDetalle; 
   )
 }
 
-export function NuevaVentaForm({ onClose }: { onClose: () => void }) {
+export function NuevaVentaForm({ onClose, venta }: { onClose: () => void; venta?: VentaExistente }) {
+  const editando = !!venta
   const { data: clientes } = useClientes()
   const { data: productos } = useProductos()
   const registrarVenta = useRegistrarVenta()
+  const editarVenta = useEditarVenta()
   const showToast = useToast()
 
-  const [clienteId, setClienteId] = useState('')
-  const [fecha, setFecha] = useState(todayISO())
-  const [ventaPasada, setVentaPasada] = useState(false)
-  const [notas, setNotas] = useState('')
-  const [lineas, setLineas] = useState<LineaForm[]>([{ ...LINEA_VACIA }])
+  const [clienteId, setClienteId] = useState(venta?.cliente_id ?? '')
+  const [fecha, setFecha] = useState(venta ? venta.fecha.slice(0, 10) : todayISO())
+  const [ventaPasada, setVentaPasada] = useState(venta ? !venta.descontar_stock : false)
+  const [notas, setNotas] = useState(venta?.notas ?? '')
+  const [lineas, setLineas] = useState<LineaForm[]>(
+    venta
+      ? venta.bz_venta_items.map((i) => ({
+          productoId: i.producto_id,
+          talla: i.talla,
+          cantidad: i.cantidad,
+          precioUnitario: i.precio_unitario,
+        }))
+      : [{ ...LINEA_VACIA }]
+  )
   const [error, setError] = useState<string | null>(null)
   const [pickerParaLinea, setPickerParaLinea] = useState<number | null>(null)
+
+  // Al editar, la talla que ya traía la venta debe seguir apareciendo aunque su stock actual
+  // muestre 0 (porque esa misma venta es la que lo tiene reservado hasta que se guarde el cambio).
+  const sinRestriccionDeStock = ventaPasada || editando
 
   function actualizarLinea(index: number, cambios: Partial<LineaForm>) {
     setLineas((prev) => prev.map((l, i) => (i === index ? { ...l, ...cambios } : l)))
@@ -114,6 +138,7 @@ export function NuevaVentaForm({ onClose }: { onClose: () => void }) {
   }
 
   const total = lineas.reduce((sum, l) => sum + l.cantidad * l.precioUnitario, 0)
+  const guardando = registrarVenta.isPending || editarVenta.isPending
 
   async function handleSubmit() {
     setError(null)
@@ -127,22 +152,39 @@ export function NuevaVentaForm({ onClose }: { onClose: () => void }) {
       return
     }
     try {
-      await registrarVenta.mutateAsync({
-        clienteId: clienteId || null,
-        items,
-        notas,
-        fecha,
-        descontarStock: !ventaPasada,
-      })
-      showToast('Venta registrada')
+      if (venta) {
+        await editarVenta.mutateAsync({
+          ventaId: venta.id,
+          clienteId: clienteId || null,
+          items,
+          notas,
+          fecha,
+          descontarStock: !ventaPasada,
+        })
+        showToast('Venta actualizada')
+      } else {
+        await registrarVenta.mutateAsync({
+          clienteId: clienteId || null,
+          items,
+          notas,
+          fecha,
+          descontarStock: !ventaPasada,
+        })
+        showToast('Venta registrada')
+      }
       onClose()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo registrar la venta')
+      setError(e instanceof Error ? e.message : 'No se pudo guardar la venta')
     }
   }
 
   return (
-    <Modal title="Nueva venta" sub="Puedes agregar varios productos en una sola venta (mayoreo)." onClose={onClose} wide>
+    <Modal
+      title={editando ? 'Editar venta' : 'Nueva venta'}
+      sub="Puedes agregar varios productos en una sola venta (mayoreo)."
+      onClose={onClose}
+      wide
+    >
       <div className="two-col">
         <div className="field">
           <label>Cliente</label>
@@ -170,7 +212,7 @@ export function NuevaVentaForm({ onClose }: { onClose: () => void }) {
       <div style={{ marginTop: 18 }}>
         {lineas.map((linea, index) => {
           const producto = productos?.find((p) => p.id === linea.productoId)
-          const tallasDisponibles = ventaPasada
+          const tallasDisponibles = sinRestriccionDeStock
             ? (producto?.bz_producto_tallas ?? [])
             : (producto?.bz_producto_tallas.filter((t) => t.cantidad > 0) ?? [])
           return (
@@ -244,15 +286,15 @@ export function NuevaVentaForm({ onClose }: { onClose: () => void }) {
         <button className="btn ghost" onClick={onClose}>
           Cancelar
         </button>
-        <button className="btn primary" onClick={handleSubmit} disabled={registrarVenta.isPending}>
-          {registrarVenta.isPending ? 'Registrando…' : 'Registrar venta'}
+        <button className="btn primary" onClick={handleSubmit} disabled={guardando}>
+          {guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Registrar venta'}
         </button>
       </div>
 
       {pickerParaLinea !== null && productos && (
         <ProductoPickerModal
           productos={productos}
-          permitirSinStock={ventaPasada}
+          permitirSinStock={sinRestriccionDeStock}
           onSelect={(p) => seleccionarProducto(pickerParaLinea, p)}
           onClose={() => setPickerParaLinea(null)}
         />
