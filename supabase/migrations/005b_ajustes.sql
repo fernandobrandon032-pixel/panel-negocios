@@ -7,7 +7,7 @@ select id, 'XXXL', 0 from bz_productos
 on conflict (producto_id, talla) do nothing;
 
 insert into stock_blancos (user_id, corte, color, talla, cantidad)
-select distinct user_id, corte, color, 'XXXL', 0 from stock_blancos
+select distinct user_id, corte, color, 'XXXL'::talla_enum, 0 from stock_blancos
 on conflict (corte, color, talla) do nothing;
 
 -- registrar_venta ahora acepta una fecha (para capturar ventas pasadas con su fecha real).
