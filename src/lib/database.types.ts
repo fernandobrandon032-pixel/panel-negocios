@@ -124,6 +124,7 @@ export type BzCostoBlank = {
   id: string
   user_id: string
   corte: CorteEnum
+  color: string
   talla: TallaEnum
   precio: number
 }

@@ -24,10 +24,19 @@ export function calcularCostoPlayera(params: {
   disenoTamano: DisenoTamano
   insumos: BzCostoInsumo[]
   blanks: BzCostoBlank[]
+  // Si se da un color, usa ese precio exacto. Si no (por ejemplo, para una estimación general
+  // donde no sabemos el color del blank), promedia los colores disponibles para ese corte+talla
+  // — el promedio es solo un fallback de estimación, nunca lo que se guarda como dato fuente.
+  color?: string
 }): CostoPlayeraDesglose {
-  const { corte, talla, disenoTamano, insumos, blanks } = params
+  const { corte, talla, disenoTamano, insumos, blanks, color } = params
 
-  const blank = blanks.find((b) => b.corte === corte && b.talla === talla)?.precio ?? 0
+  const candidatos = blanks.filter((b) => b.corte === corte && b.talla === talla)
+  const blank = color
+    ? (candidatos.find((b) => b.color.toLowerCase() === color.toLowerCase())?.precio ?? 0)
+    : candidatos.length
+      ? candidatos.reduce((sum, b) => sum + b.precio, 0) / candidatos.length
+      : 0
 
   // DTF ya viene como costo directo en pesos por playera (más fácil de leer/ajustar que
   // metro/ratio) — distinto según qué tan grande es el diseño.

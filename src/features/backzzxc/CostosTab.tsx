@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { EmptyState } from '../../components/shared/EmptyState'
 import { useToast } from '../../contexts/ToastContext'
 import { formatCurrency } from '../../lib/formatters'
@@ -8,6 +8,7 @@ import { useCostosBlank, useCostosInsumos, useUpdateCostoInsumo, useUpsertCostoB
 
 const CORTES: CorteEnum[] = ['Corte Recto', 'Corte Oversize', 'Corte Polo', 'Corte Niño']
 const TALLAS: TallaEnum[] = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+const COLORES_DEFAULT = ['Blanco', 'Negro']
 
 function InsumoRow({ insumo }: { insumo: { id: string; clave: string; valor: number; unidad: string | null; notas: string | null } }) {
   const [valor, setValor] = useState(insumo.valor)
@@ -40,7 +41,7 @@ function InsumoRow({ insumo }: { insumo: { id: string; clave: string; valor: num
   )
 }
 
-function BlankCell({ corte, talla, precio }: { corte: CorteEnum; talla: TallaEnum; precio?: number }) {
+function BlankCell({ corte, color, talla, precio }: { corte: CorteEnum; color: string; talla: TallaEnum; precio?: number }) {
   const [valor, setValor] = useState(precio ?? 0)
   const upsert = useUpsertCostoBlank()
   const showToast = useToast()
@@ -55,7 +56,7 @@ function BlankCell({ corte, talla, precio }: { corte: CorteEnum; talla: TallaEnu
       onChange={(e) => setValor(Number(e.target.value))}
       onBlur={async () => {
         if (valor !== (precio ?? 0) && valor > 0) {
-          await upsert.mutateAsync({ corte, talla, precio: valor })
+          await upsert.mutateAsync({ corte, color, talla, precio: valor })
           showToast('Precio de blank actualizado')
         }
       }}
@@ -68,8 +69,15 @@ export function CostosTab() {
   const { data: blanks, isLoading: loadingBlanks } = useCostosBlank()
 
   const [corteCalc, setCorteCalc] = useState<CorteEnum>('Corte Recto')
+  const [colorCalc, setColorCalc] = useState('Blanco')
   const [tallaCalc, setTallaCalc] = useState<TallaEnum>('M')
   const [disenoCalc, setDisenoCalc] = useState<DisenoTamano>('grande')
+
+  const colores = useMemo(() => {
+    const distintos = new Set(COLORES_DEFAULT)
+    for (const b of blanks ?? []) distintos.add(b.color)
+    return Array.from(distintos)
+  }, [blanks])
 
   if (loadingInsumos || loadingBlanks) return <EmptyState message="Cargando costos…" />
 
@@ -79,6 +87,7 @@ export function CostosTab() {
     disenoTamano: disenoCalc,
     insumos: insumos ?? [],
     blanks: blanks ?? [],
+    color: colorCalc,
   })
 
   return (
@@ -108,6 +117,16 @@ export function CostosTab() {
           </select>
         </div>
       </div>
+      <div className="field" style={{ marginBottom: 14 }}>
+        <label>Color del blank</label>
+        <select value={colorCalc} onChange={(e) => setColorCalc(e.target.value)}>
+          {colores.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="sale-type-toggle">
         <button className={disenoCalc === 'grande' ? 'active' : ''} onClick={() => setDisenoCalc('grande')}>
           Diseño grande
@@ -122,7 +141,7 @@ export function CostosTab() {
         costos reales son distintos.
       </div>
       <div className="note-box">
-        Blank: {formatCurrency(desglose.blank)} · DTF: {formatCurrency(desglose.dtf)} · Bolsa:{' '}
+        Blank ({colorCalc}): {formatCurrency(desglose.blank)} · DTF: {formatCurrency(desglose.dtf)} · Bolsa:{' '}
         {formatCurrency(desglose.bolsa)} · Cinta térmica: {formatCurrency(desglose.cintaTermica)} · Electricidad:{' '}
         {formatCurrency(desglose.electricidad)}
         <br />
@@ -132,28 +151,44 @@ export function CostosTab() {
       <div className="section-row">
         <h2>Precios de playera en blanco (Euro Cotton)</h2>
       </div>
-      <table style={{ marginBottom: 24 }}>
-        <thead>
-          <tr>
-            <th>Corte</th>
-            {TALLAS.map((t) => (
-              <th key={t}>{t}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {CORTES.map((corte) => (
-            <tr key={corte}>
-              <td>{corte}</td>
-              {TALLAS.map((talla) => (
-                <td key={talla}>
-                  <BlankCell corte={corte} talla={talla} precio={blanks?.find((b) => b.corte === corte && b.talla === talla)?.precio} />
-                </td>
+      <div className="note-box">
+        Precio exacto por color — blanco y negro (u otro color) no cuestan lo mismo, así que se
+        guardan por separado, nunca promediados.
+      </div>
+      {CORTES.map((corte) => (
+        <div key={corte} style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, opacity: 0.7, marginBottom: 6 }}>{corte}</div>
+          <table style={{ marginBottom: 8 }}>
+            <thead>
+              <tr>
+                <th>Color</th>
+                {TALLAS.map((t) => (
+                  <th key={t} style={{ textAlign: 'center' }}>
+                    {t}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {colores.map((color) => (
+                <tr key={color}>
+                  <td>{color}</td>
+                  {TALLAS.map((talla) => (
+                    <td key={talla}>
+                      <BlankCell
+                        corte={corte}
+                        color={color}
+                        talla={talla}
+                        precio={blanks?.find((b) => b.corte === corte && b.color === color && b.talla === talla)?.precio}
+                      />
+                    </td>
+                  ))}
+                </tr>
               ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+            </tbody>
+          </table>
+        </div>
+      ))}
 
       <div className="section-row">
         <h2>Insumos</h2>

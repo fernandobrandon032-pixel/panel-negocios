@@ -38,8 +38,8 @@ export function useCostosBlank() {
 export function useUpsertCostoBlank() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (input: { corte: CorteEnum; talla: TallaEnum; precio: number }) => {
-      const { error } = await supabase.from('bz_costos_blank').upsert(input, { onConflict: 'corte,talla' })
+    mutationFn: async (input: { corte: CorteEnum; color: string; talla: TallaEnum; precio: number }) => {
+      const { error } = await supabase.from('bz_costos_blank').upsert(input, { onConflict: 'corte,color,talla' })
       if (error) throw error
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bz', 'costos_blank'] }),
