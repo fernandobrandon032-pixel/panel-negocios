@@ -1,14 +1,37 @@
 -- 005b_ajustes.sql
 -- Corre esto después de que 005a haya dicho Success.
 
--- Rellena XXXL en 0 para todo lo que ya existe, para que la talla nueva aparezca en todos lados.
-insert into bz_producto_tallas (producto_id, talla, cantidad)
-select id, 'XXXL', 0 from bz_productos
-on conflict (producto_id, talla) do nothing;
+do $$
+declare
+  v_user_id uuid;
+begin
+  select id into v_user_id from auth.users order by created_at limit 1;
+  if v_user_id is null then
+    raise exception 'No hay ningun usuario creado todavia en Authentication > Users';
+  end if;
 
-insert into stock_blancos (user_id, corte, color, talla, cantidad)
-select distinct user_id, corte, color, 'XXXL'::talla_enum, 0 from stock_blancos
-on conflict (corte, color, talla) do nothing;
+  -- Rellena XXXL en 0 para todo lo que ya existe, para que la talla nueva aparezca en todos lados.
+  insert into bz_producto_tallas (producto_id, talla, cantidad)
+  select id, 'XXXL'::talla_enum, 0 from bz_productos
+  on conflict (producto_id, talla) do nothing;
+
+  insert into stock_blancos (user_id, corte, color, talla, cantidad)
+  select distinct user_id, corte, color, 'XXXL'::talla_enum, 0 from stock_blancos
+  on conflict (corte, color, talla) do nothing;
+
+  -- Insumos: DTF directo en pesos por diseño (en vez de metro/ratio), y cinta térmica como
+  -- gasto periódico cada 6 meses en vez de por playera.
+  delete from bz_costos_insumos where clave in (
+    'dtf_por_metro', 'dtf_disenos_grandes_por_metro', 'dtf_disenos_chicos_por_metro', 'cinta_termica_unidad'
+  );
+
+  insert into bz_costos_insumos (user_id, clave, valor, unidad, notas) values
+    (v_user_id, 'dtf_costo_diseno_grande', 36.36, 'MXN/playera', 'DTF $200/metro entre ~5.5 diseños grandes por metro'),
+    (v_user_id, 'dtf_costo_diseno_chico', 20.00, 'MXN/playera', 'DTF $200/metro entre ~10 diseños chicos por metro'),
+    (v_user_id, 'cinta_termica_costo', 60, 'MXN cada 6 meses', 'un rollo dura mucho, se compra cada ~6 meses'),
+    (v_user_id, 'cinta_termica_playeras_estimadas', 600, 'playeras cada 6 meses', 'estimado inicial, ajústalo cuando sepas cuántas playeras realmente salen en 6 meses')
+  on conflict (clave) do nothing;
+end $$;
 
 -- registrar_venta ahora acepta una fecha (para capturar ventas pasadas con su fecha real).
 drop function if exists registrar_venta(uuid, jsonb, text, text);
@@ -78,16 +101,3 @@ end;
 $$;
 
 grant execute on function registrar_venta(uuid, jsonb, text, text, timestamptz) to authenticated;
-
--- Insumos: DTF directo en pesos por diseño (en vez de metro/ratio), y cinta térmica como gasto
--- periódico cada 6 meses en vez de por playera.
-delete from bz_costos_insumos where clave in (
-  'dtf_por_metro', 'dtf_disenos_grandes_por_metro', 'dtf_disenos_chicos_por_metro', 'cinta_termica_unidad'
-);
-
-insert into bz_costos_insumos (clave, valor, unidad, notas) values
-  ('dtf_costo_diseno_grande', 36.36, 'MXN/playera', 'DTF $200/metro entre ~5.5 diseños grandes por metro'),
-  ('dtf_costo_diseno_chico', 20.00, 'MXN/playera', 'DTF $200/metro entre ~10 diseños chicos por metro'),
-  ('cinta_termica_costo', 60, 'MXN cada 6 meses', 'un rollo dura mucho, se compra cada ~6 meses'),
-  ('cinta_termica_playeras_estimadas', 600, 'playeras cada 6 meses', 'estimado inicial, ajústalo cuando sepas cuántas playeras realmente salen en 6 meses')
-on conflict (clave) do nothing;
