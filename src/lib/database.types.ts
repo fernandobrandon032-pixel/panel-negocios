@@ -8,7 +8,7 @@
 // `interface` rompe la inferencia, como `type` funciona). Ya nos costó media hora, no lo repitas.
 
 export type CorteEnum = 'Corte Recto' | 'Corte Oversize' | 'Corte Polo' | 'Corte Niño'
-export type TallaEnum = 'S' | 'M' | 'L' | 'XL' | 'XXL'
+export type TallaEnum = 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL'
 export type FotoTipoEnum = 'frente' | 'espalda'
 export type ProspectoEstatusEnum = 'Nuevo' | 'Contactado' | 'Negociando' | 'Ganado' | 'Perdido'
 export type ConsignacionEstadoEnum = 'en_exhibicion' | 'vendida' | 'devuelta'
@@ -301,6 +301,7 @@ export type Database = {
           p_items: { producto_id: string; talla: TallaEnum; cantidad: number; precio_unitario: number }[]
           p_notas?: string | null
           p_origen?: string
+          p_fecha?: string | null
         }
         Returns: string
       }

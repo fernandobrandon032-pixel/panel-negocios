@@ -27,8 +27,9 @@ export function useCreateCliente() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (input: { nombre: string; contacto?: string; notas?: string }) => {
-      const { error } = await supabase.from('bz_clientes').insert(input)
+      const { data, error } = await supabase.from('bz_clientes').insert(input).select().single()
       if (error) throw error
+      return data
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bz', 'clientes'] }),
   })

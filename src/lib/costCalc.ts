@@ -29,15 +29,18 @@ export function calcularCostoPlayera(params: {
 
   const blank = blanks.find((b) => b.corte === corte && b.talla === talla)?.precio ?? 0
 
-  const dtfPorMetro = valorInsumo(insumos, 'dtf_por_metro')
-  const disenosPorMetro =
-    disenoTamano === 'grande'
-      ? valorInsumo(insumos, 'dtf_disenos_grandes_por_metro')
-      : valorInsumo(insumos, 'dtf_disenos_chicos_por_metro')
-  const dtf = disenosPorMetro > 0 ? dtfPorMetro / disenosPorMetro : 0
+  // DTF ya viene como costo directo en pesos por playera (más fácil de leer/ajustar que
+  // metro/ratio) — distinto según qué tan grande es el diseño.
+  const dtf =
+    disenoTamano === 'grande' ? valorInsumo(insumos, 'dtf_costo_diseno_grande') : valorInsumo(insumos, 'dtf_costo_diseno_chico')
 
   const bolsa = valorInsumo(insumos, 'bolsa_unidad')
-  const cintaTermica = valorInsumo(insumos, 'cinta_termica_unidad')
+
+  // La cinta térmica dura mucho (se compra cada ~6 meses), así que su costo por playera se
+  // prorratea entre las playeras estimadas que salen en ese periodo.
+  const cintaTermicaCosto = valorInsumo(insumos, 'cinta_termica_costo')
+  const cintaTermicaPlayerasEstimadas = valorInsumo(insumos, 'cinta_termica_playeras_estimadas') || 1
+  const cintaTermica = cintaTermicaCosto / cintaTermicaPlayerasEstimadas
 
   const planchaGrandeWatts = valorInsumo(insumos, 'plancha_grande_watts')
   const planchaChicaWatts = valorInsumo(insumos, 'plancha_chica_watts')

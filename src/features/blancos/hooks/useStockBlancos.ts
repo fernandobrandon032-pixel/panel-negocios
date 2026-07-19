@@ -4,7 +4,7 @@ import { supabase } from '../../../lib/supabaseClient'
 import type { CorteEnum, TallaEnum } from '../../../lib/database.types'
 
 const QUERY_KEY = ['stock_blancos']
-const TALLAS: TallaEnum[] = ['S', 'M', 'L', 'XL', 'XXL']
+const TALLAS: TallaEnum[] = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
 export function useStockBlancos() {
   const queryClient = useQueryClient()

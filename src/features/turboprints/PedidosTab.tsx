@@ -9,7 +9,7 @@ import { useClientes } from './hooks/useClientes'
 import { useCreatePedido, useDeletePedido, usePedidos, useUpdatePedido } from './hooks/usePedidos'
 
 const ESTATUSES: PedidoEstatusEnum[] = ['Pendiente', 'En proceso', 'Listo', 'Entregado']
-const TALLAS: TallaEnum[] = ['S', 'M', 'L', 'XL', 'XXL']
+const TALLAS: TallaEnum[] = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
 interface Pedido {
   id: string

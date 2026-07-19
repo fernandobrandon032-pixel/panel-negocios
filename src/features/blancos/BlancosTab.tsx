@@ -6,7 +6,7 @@ import { useAgregarColorBlanco, useSetCantidadBlanco, useStockBlancos } from './
 import { ShirtIcon } from './ShirtIcon'
 
 const CORTES: CorteEnum[] = ['Corte Recto', 'Corte Oversize', 'Corte Polo', 'Corte Niño']
-const TALLAS: TallaEnum[] = ['S', 'M', 'L', 'XL', 'XXL']
+const TALLAS: TallaEnum[] = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
 function CantidadInput({
   corte,
@@ -31,7 +31,8 @@ function CantidadInput({
       onBlur={() => {
         if (valor !== cantidad) setCantidad.mutate({ corte, color, talla, cantidad: valor })
       }}
-      style={{ width: '100%', textAlign: 'center', padding: 6 }}
+      className="qty-input"
+      style={{ width: '100%' }}
     />
   )
 }
@@ -83,11 +84,12 @@ export function BlancosTab() {
   return (
     <>
       <div className="section-row">
-        <h2>Playeras en blanco</h2>
+        <h2>Playeras lisas</h2>
       </div>
       <div className="note-box">
-        Este stock es compartido entre Backzzxc y TurboPrints95 — es el mismo blanco que se usa
-        para estampar en ambos negocios, así que se actualiza igual en las dos pestañas.
+        Este stock es compartido entre Backzzxc y TurboPrints95 — es la misma playera lisa que se
+        usa para estampar en ambos negocios, así que se actualiza sola en las dos pestañas (sin
+        recargar la página).
       </div>
 
       {CORTES.map((corte) => {

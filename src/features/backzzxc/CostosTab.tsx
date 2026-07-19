@@ -7,7 +7,7 @@ import type { CorteEnum, TallaEnum } from '../../lib/database.types'
 import { useCostosBlank, useCostosInsumos, useUpdateCostoInsumo, useUpsertCostoBlank } from './hooks/useCostos'
 
 const CORTES: CorteEnum[] = ['Corte Recto', 'Corte Oversize', 'Corte Polo', 'Corte Niño']
-const TALLAS: TallaEnum[] = ['S', 'M', 'L', 'XL', 'XXL']
+const TALLAS: TallaEnum[] = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
 function InsumoRow({ insumo }: { insumo: { id: string; clave: string; valor: number; unidad: string | null; notas: string | null } }) {
   const [valor, setValor] = useState(insumo.valor)
@@ -24,7 +24,8 @@ function InsumoRow({ insumo }: { insumo: { id: string; clave: string; valor: num
       <td>
         <input
           type="number"
-          style={{ width: 100 }}
+          className="qty-input"
+          style={{ width: 110 }}
           value={valor}
           onChange={(e) => setValor(Number(e.target.value))}
           onBlur={async () => {
@@ -47,7 +48,8 @@ function BlankCell({ corte, talla, precio }: { corte: CorteEnum; talla: TallaEnu
   return (
     <input
       type="number"
-      style={{ width: 80 }}
+      className="qty-input"
+      style={{ width: 90 }}
       value={valor}
       placeholder="—"
       onChange={(e) => setValor(Number(e.target.value))}
@@ -113,6 +115,11 @@ export function CostosTab() {
         <button className={disenoCalc === 'chico' ? 'active' : ''} onClick={() => setDisenoCalc('chico')}>
           Diseño chico
         </button>
+      </div>
+      <div style={{ fontSize: 11.5, opacity: 0.55, marginBottom: 10 }}>
+        El costo del DTF varía según qué tan grande es el diseño — por eso este botón: pruébalo en
+        "grande" o "chico" según el diseño real y ajusta los dos valores de DTF en Insumos si tus
+        costos reales son distintos.
       </div>
       <div className="note-box">
         Blank: {formatCurrency(desglose.blank)} · DTF: {formatCurrency(desglose.dtf)} · Bolsa:{' '}

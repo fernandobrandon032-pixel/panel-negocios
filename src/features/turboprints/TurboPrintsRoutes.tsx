@@ -11,7 +11,7 @@ const tabs = [
   { to: '/turboprints', label: 'Resumen', end: true },
   { to: '/turboprints/pedidos', label: 'Pedidos' },
   { to: '/turboprints/stock', label: 'Stock' },
-  { to: '/turboprints/blancos', label: 'Blancos' },
+  { to: '/turboprints/blancos', label: 'Playeras lisas' },
   { to: '/turboprints/clientes', label: 'Clientes' },
   { to: '/turboprints/prospectos', label: 'Prospectos' },
 ]

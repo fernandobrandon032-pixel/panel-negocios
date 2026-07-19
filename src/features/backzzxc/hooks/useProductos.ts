@@ -7,7 +7,7 @@ export interface ProductoConDetalle extends BzProducto {
   bz_producto_fotos: BzProductoFoto[]
 }
 
-const TALLAS: TallaEnum[] = ['S', 'M', 'L', 'XL', 'XXL']
+const TALLAS: TallaEnum[] = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
 export const PRECIO_DEFAULT_POR_CORTE: Record<CorteEnum, number> = {
   'Corte Recto': 250,

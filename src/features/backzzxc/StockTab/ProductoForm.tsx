@@ -12,7 +12,7 @@ import {
 } from '../hooks/useProductos'
 
 const CORTES: CorteEnum[] = ['Corte Recto', 'Corte Oversize', 'Corte Polo', 'Corte Niño']
-const TALLAS: TallaEnum[] = ['S', 'M', 'L', 'XL', 'XXL']
+const TALLAS: TallaEnum[] = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
 export function ProductoForm({ producto, onClose }: { producto?: ProductoConDetalle; onClose: () => void }) {
   const isEdit = !!producto
@@ -27,7 +27,7 @@ export function ProductoForm({ producto, onClose }: { producto?: ProductoConDeta
   const [precio, setPrecio] = useState(producto?.precio ?? PRECIO_DEFAULT_POR_CORTE['Corte Recto'])
   const [notas, setNotas] = useState(producto?.notas ?? '')
   const [tallas, setTallas] = useState<Record<TallaEnum, number>>(() => {
-    const base: Record<TallaEnum, number> = { S: 0, M: 0, L: 0, XL: 0, XXL: 0 }
+    const base: Record<TallaEnum, number> = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, XXXL: 0 }
     for (const t of producto?.bz_producto_tallas ?? []) base[t.talla] = t.cantidad
     return base
   })
